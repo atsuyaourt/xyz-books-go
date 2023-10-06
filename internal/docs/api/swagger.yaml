@@ -1,0 +1,532 @@
+definitions:
+  Author:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+    type: object
+  Book:
+    properties:
+      authors:
+        items:
+          type: string
+        type: array
+      edition:
+        type: string
+      image_url:
+        type: string
+      isbn10:
+        type: string
+      isbn13:
+        type: string
+      price:
+        type: number
+      publication_year:
+        type: integer
+      publisher:
+        type: string
+      title:
+        type: string
+    type: object
+  CreateAuthorParams:
+    properties:
+      first_name:
+        minLength: 1
+        type: string
+      last_name:
+        minLength: 1
+        type: string
+      middle_name:
+        minLength: 1
+        type: string
+    required:
+    - first_name
+    - last_name
+    type: object
+  CreateBookParams:
+    properties:
+      authors:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      book:
+        properties:
+          edition:
+            type: string
+          image_url:
+            type: string
+          isbn10:
+            type: string
+          isbn13:
+            type: string
+          price:
+            type: number
+          publication_year:
+            minimum: 1000
+            type: integer
+          title:
+            type: string
+        required:
+        - price
+        - publication_year
+        - title
+        type: object
+      publisher:
+        type: string
+    required:
+    - authors
+    - publisher
+    type: object
+  PaginatedAuthors:
+    properties:
+      count:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/Author'
+        type: array
+      next_page:
+        type: integer
+      page:
+        type: integer
+      per_page:
+        type: integer
+      prev_page:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  PaginatedBooks:
+    properties:
+      count:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/Book'
+        type: array
+      next_page:
+        type: integer
+      page:
+        type: integer
+      per_page:
+        type: integer
+      prev_page:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  PaginatedPublishers:
+    properties:
+      count:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/Publisher'
+        type: array
+      next_page:
+        type: integer
+      page:
+        type: integer
+      per_page:
+        type: integer
+      prev_page:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  Publisher:
+    properties:
+      publisher_name:
+        type: string
+    type: object
+  UpdateAuthorParams:
+    properties:
+      first_name:
+        minLength: 1
+        type: string
+      last_name:
+        minLength: 1
+        type: string
+      middle_name:
+        minLength: 1
+        type: string
+    type: object
+  UpdateBookParams:
+    properties:
+      image_url:
+        type: string
+      isbn10:
+        type: string
+      isbn13:
+        type: string
+      price:
+        type: number
+      publication_year:
+        type: integer
+      title:
+        minLength: 1
+        type: string
+    type: object
+  UpdatePublisherParams:
+    properties:
+      publisher_name:
+        minLength: 1
+        type: string
+    type: object
+info:
+  contact:
+    email: emiliogozo@proton.me
+    name: Emilio Gozo
+  description: XYZ Books API
+  title: XYZ Books API
+  version: "1.0"
+paths:
+  /authors:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        minimum: 1
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PaginatedAuthors'
+      summary: List authors
+      tags:
+      - authors
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create author parameters
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/CreateAuthorParams'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Author'
+      summary: Create author
+      tags:
+      - authors
+  /authors/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete author
+      tags:
+      - authors
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Author'
+      summary: Get author
+      tags:
+      - authors
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: author ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update author parameters
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateAuthorParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Author'
+      summary: Update author
+      tags:
+      - authors
+  /books:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - in: query
+        name: author
+        type: string
+      - in: query
+        name: max_price
+        type: number
+      - in: query
+        name: max_publication_year
+        type: integer
+      - in: query
+        name: min_price
+        type: number
+      - in: query
+        name: min_publication_year
+        type: integer
+      - description: page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        maximum: 30
+        minimum: 1
+        name: per_page
+        type: integer
+      - in: query
+        name: publisher
+        type: string
+      - in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PaginatedBooks'
+      summary: List books
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create book parameters
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/CreateBookParams'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Book'
+      summary: Create book
+      tags:
+      - books
+  /books/{isbn}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: ISBN-13
+        in: path
+        name: isbn
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete book
+      tags:
+      - books
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: ISBN-13
+        in: path
+        name: isbn
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Book'
+      summary: Get book
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ISBN-13
+        in: path
+        name: isbn
+        required: true
+        type: string
+      - description: Update book parameters
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateBookParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Book'
+      summary: Update book
+      tags:
+      - books
+  /publishers:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - description: limit
+        in: query
+        maximum: 30
+        minimum: 1
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PaginatedPublishers'
+      summary: List publishers
+      tags:
+      - publishers
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create publisher parameters
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/CreateAuthorParams'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/Publisher'
+      summary: Create publisher
+      tags:
+      - publishers
+  /publishers/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: publisher ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete publisher
+      tags:
+      - publishers
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: publisher ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Publisher'
+      summary: Get publisher
+      tags:
+      - publishers
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: publisher ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update publisher parameters
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/UpdatePublisherParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/Publisher'
+      summary: Update publisher
+      tags:
+      - publishers
+swagger: "2.0"

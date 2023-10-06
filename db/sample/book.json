@@ -1,0 +1,78 @@
+[
+    {
+        "book": {
+            "title": "American Elf",
+            "isbn13": "9781891830853",
+            "isbn10": "1891830856",
+            "publication_year": 2004,
+            "price": 1000,
+            "edition": "Book 2"
+        },
+        "authors": [
+            "Joel Hartse",
+            "Hannah P. Templer",
+            "Marguerite Z. Duras"
+        ],
+        "publisher": "Paste Magazine"
+    },
+    {
+        "book": {
+            "title": "Cosmoknights",
+            "isbn13": "9781603094542",
+            "isbn10": "1603094547",
+            "publication_year": 2019,
+            "price": 2000,
+            "image_url": "https://m.media-amazon.com/images/I/51nKLHxvpYL._SY445_SX342_.jpg",
+            "edition": "Book 1"
+        },
+        "authors": [
+            "Kingsley Amis"
+        ],
+        "publisher": "Publishers Weekly"
+    },
+    {
+        "book": {
+            "title": "Essex County",
+            "isbn13": "9781603090384",
+            "isbn10": "160309038X",
+            "publication_year": 1990,
+            "price": 500,
+            "edition": "Book 1"
+        },
+        "authors": [
+            "Kingsley Amis"
+        ],
+        "publisher": "Graywolf Press"
+    },
+    {
+        "book": {
+            "title": "Hey, Mister (Vol 1)",
+            "isbn13": "9781891830020",
+            "isbn10": "1891830023",
+            "publication_year": 2000,
+            "edition": "After School Special",
+            "image_url": "https://m.media-amazon.com/images/I/51pOdbrYd2L._SY466_.jpg",
+            "price": 1200
+        },
+        "authors": [
+            "Hannah P. Templer",
+            "Fannie Peters Flagg",
+            "Camille Byron Paglia"
+        ],
+        "publisher": "Graywolf Press"
+    },
+    {
+        "book": {
+            "title": "The Underwater Welder",
+            "isbn13": "9781603093989",
+            "isbn10": "1603093982",
+            "publication_year": 2022,
+            "price": 3000,
+            "image_url": "https://m.media-amazon.com/images/I/91+XkroXM0L._SY466_.jpg"
+        },
+        "authors": [
+            "Rainer Steel Rilke"
+        ],
+        "publisher": "McSweeney's"
+    }
+]
