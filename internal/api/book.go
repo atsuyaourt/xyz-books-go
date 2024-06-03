@@ -251,20 +251,19 @@ func (s *Server) ListBooks(ctx *gin.Context) {
 			Valid: req.MaxPublicationYear > req.MinPublicationYear,
 		},
 	}
-	bookRows, err := s.store.ListBooks(ctx, arg)
+	rows, err := s.store.ListBooks(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	numBooks := len(bookRows)
-	items := make([]Book, numBooks)
-	for i, book := range bookRows {
-		items[i] = newBook(newBookArg{
-			Book:      book.Book,
-			Authors:   strings.Split(book.Authors, ","),
-			Publisher: book.PublisherName,
-		})
+	var items []Book
+	for _, row := range rows {
+		items = append(items, newBook(newBookArg{
+			Book:      row.Book,
+			Authors:   strings.Split(row.Authors, ","),
+			Publisher: row.PublisherName,
+		}))
 	}
 
 	count, err := s.store.CountBooks(ctx, db.CountBooksParams{
