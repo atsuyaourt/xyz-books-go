@@ -8,14 +8,14 @@ import (
 	"sync"
 	"time"
 
-	db "github.com/emiliogozo/xyz-books/db/sqlc"
-	"github.com/emiliogozo/xyz-books/internal/api"
-	docs "github.com/emiliogozo/xyz-books/internal/docs/api"
-	"github.com/emiliogozo/xyz-books/internal/service"
-	"github.com/emiliogozo/xyz-books/internal/util"
+	db "github.com/atsuyaourt/xyz-books/db/sqlc"
+	"github.com/atsuyaourt/xyz-books/internal/api"
+	docs "github.com/atsuyaourt/xyz-books/internal/docs/api"
+	"github.com/atsuyaourt/xyz-books/internal/service"
+	"github.com/atsuyaourt/xyz-books/internal/util"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // XYZBooksAPI

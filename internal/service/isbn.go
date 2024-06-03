@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/emiliogozo/xyz-books/internal/api"
-	"github.com/emiliogozo/xyz-books/internal/util"
+	"github.com/atsuyaourt/xyz-books/internal/api"
+	"github.com/atsuyaourt/xyz-books/internal/util"
 )
 
 type ISBNService struct {

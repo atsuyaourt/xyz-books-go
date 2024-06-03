@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	db "github.com/emiliogozo/xyz-books/db/sqlc"
-	"github.com/emiliogozo/xyz-books/internal/util"
+	db "github.com/atsuyaourt/xyz-books/db/sqlc"
+	"github.com/atsuyaourt/xyz-books/internal/util"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

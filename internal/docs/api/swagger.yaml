@@ -83,7 +83,7 @@ definitions:
     type: object
   PaginatedAuthors:
     properties:
-      count:
+      current_page:
         type: integer
       items:
         items:
@@ -91,18 +91,18 @@ definitions:
         type: array
       next_page:
         type: integer
-      page:
-        type: integer
       per_page:
         type: integer
       prev_page:
+        type: integer
+      total_items:
         type: integer
       total_pages:
         type: integer
     type: object
   PaginatedBooks:
     properties:
-      count:
+      current_page:
         type: integer
       items:
         items:
@@ -110,18 +110,18 @@ definitions:
         type: array
       next_page:
         type: integer
-      page:
-        type: integer
       per_page:
         type: integer
       prev_page:
+        type: integer
+      total_items:
         type: integer
       total_pages:
         type: integer
     type: object
   PaginatedPublishers:
     properties:
-      count:
+      current_page:
         type: integer
       items:
         items:
@@ -129,11 +129,11 @@ definitions:
         type: array
       next_page:
         type: integer
-      page:
-        type: integer
       per_page:
         type: integer
       prev_page:
+        type: integer
+      total_items:
         type: integer
       total_pages:
         type: integer

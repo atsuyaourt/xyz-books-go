@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	db "github.com/emiliogozo/xyz-books/db/sqlc"
-	"github.com/emiliogozo/xyz-books/internal/util"
+	db "github.com/atsuyaourt/xyz-books/db/sqlc"
+	"github.com/atsuyaourt/xyz-books/internal/util"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"

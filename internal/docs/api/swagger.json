@@ -665,7 +665,7 @@
         "PaginatedAuthors": {
             "type": "object",
             "properties": {
-                "count": {
+                "current_page": {
                     "type": "integer"
                 },
                 "items": {
@@ -677,13 +677,13 @@
                 "next_page": {
                     "type": "integer"
                 },
-                "page": {
-                    "type": "integer"
-                },
                 "per_page": {
                     "type": "integer"
                 },
                 "prev_page": {
+                    "type": "integer"
+                },
+                "total_items": {
                     "type": "integer"
                 },
                 "total_pages": {
@@ -694,7 +694,7 @@
         "PaginatedBooks": {
             "type": "object",
             "properties": {
-                "count": {
+                "current_page": {
                     "type": "integer"
                 },
                 "items": {
@@ -706,13 +706,13 @@
                 "next_page": {
                     "type": "integer"
                 },
-                "page": {
-                    "type": "integer"
-                },
                 "per_page": {
                     "type": "integer"
                 },
                 "prev_page": {
+                    "type": "integer"
+                },
+                "total_items": {
                     "type": "integer"
                 },
                 "total_pages": {
@@ -723,7 +723,7 @@
         "PaginatedPublishers": {
             "type": "object",
             "properties": {
-                "count": {
+                "current_page": {
                     "type": "integer"
                 },
                 "items": {
@@ -735,13 +735,13 @@
                 "next_page": {
                     "type": "integer"
                 },
-                "page": {
-                    "type": "integer"
-                },
                 "per_page": {
                     "type": "integer"
                 },
                 "prev_page": {
+                    "type": "integer"
+                },
+                "total_items": {
                     "type": "integer"
                 },
                 "total_pages": {
