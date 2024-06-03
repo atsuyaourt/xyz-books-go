@@ -1,0 +1,103 @@
+[
+  {
+    "title": "The Great Gatsby",
+    "isbn13": "9780743273565",
+    "price": 10.99,
+    "publication_year": 1925,
+    "image_url": "https://example.com/gatsby.jpg",
+    "edition": "First",
+    "authors": ["F. Scott Fitzgerald"],
+    "publisher": "Scribner"
+  },
+  {
+    "title": "To Kill a Mockingbird",
+    "isbn13": "9780061120084",
+    "isbn10": "0061120081",
+    "price": 7.19,
+    "publication_year": 1960,
+    "image_url": "https://example.com/mockingbird.jpg",
+    "edition": "50th Anniversary",
+    "authors": ["Harper Lee"],
+    "publisher": "Harper Perennial Modern Classics"
+  },
+  {
+    "title": "1984",
+    "isbn10": "0451524934",
+    "price": 9.99,
+    "publication_year": 1949,
+    "image_url": "https://example.com/1984.jpg",
+    "edition": "Plume",
+    "authors": ["George Orwell"],
+    "publisher": "Signet Classic"
+  },
+  {
+    "title": "Pride and Prejudice",
+    "isbn13": "9780141439518",
+    "price": 5.99,
+    "publication_year": 1813,
+    "image_url": "https://example.com/pride_prejudice.jpg",
+    "edition": "Penguin Classics",
+    "authors": ["Jane Austen"],
+    "publisher": "Penguin Classics"
+  },
+  {
+    "title": "The Catcher in the Rye",
+    "isbn10": "0316769487",
+    "price": 8.99,
+    "publication_year": 1951,
+    "image_url": "https://example.com/catcher_rye.jpg",
+    "edition": "Back Bay Books",
+    "authors": ["J.D. Salinger"],
+    "publisher": "Little, Brown and Company"
+  },
+  {
+    "title": "The Hobbit",
+    "isbn13": "9780547928227",
+    "price": 14.49,
+    "publication_year": 1937,
+    "image_url": "https://example.com/hobbit.jpg",
+    "edition": "75th Anniversary Edition",
+    "authors": ["J.R.R. Tolkien"],
+    "publisher": "Houghton Mifflin Harcourt"
+  },
+  {
+    "title": "Fahrenheit 451",
+    "isbn10": "1451673310",
+    "price": 11.99,
+    "publication_year": 1953,
+    "image_url": "https://example.com/fahrenheit_451.jpg",
+    "edition": "60th Anniversary Edition",
+    "authors": ["Ray Bradbury"],
+    "publisher": "Simon & Schuster"
+  },
+  {
+    "title": "Moby Dick",
+    "isbn13": "9781503280786",
+    "price": 9.99,
+    "publication_year": 1851,
+    "image_url": "https://example.com/moby_dick.jpg",
+    "edition": "CreateSpace Independent Publishing Platform",
+    "authors": ["Herman Melville"],
+    "publisher": "CreateSpace Independent Publishing Platform"
+  },
+  {
+    "title": "War and Peace",
+    "isbn13": "9781853260629",
+    "price": 12.99,
+    "publication_year": 1869,
+    "image_url": "https://example.com/war_peace.jpg",
+    "edition": "Wordsworth Editions",
+    "authors": ["Leo Tolstoy"],
+    "publisher": "Wordsworth Editions"
+  },
+  {
+    "title": "The Odyssey",
+    "isbn10": "0140268863",
+    "price": 11.0,
+    "publication_year": -800,
+    "image_url": "https://example.com/odyssey.jpg",
+    "edition": "Penguin Classics",
+    "authors": ["Homer", "Robert Fagles (Translator)"],
+    "publisher": "Penguin Classics"
+  }
+]

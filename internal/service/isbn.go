@@ -6,16 +6,20 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 
 	"github.com/atsuyaourt/xyz-books/internal/api"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 )
 
+type HTTPClient interface {
+	Get(url string) (resp *http.Response, err error)
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type ISBNService struct {
 	apiBasePath string
-	client      *http.Client
-	csvWriter   *util.CsvWriter
+	client      HTTPClient
+	csvWriter   util.Writer
 }
 
 // NewService creates a new instance of the Service
@@ -37,48 +41,43 @@ func NewISBNService(serverAddress string, outputPath string) *ISBNService {
 }
 
 func (s *ISBNService) Run() {
-	indexChan := make(chan api.Book)
-	convertChan := make(chan util.ISBN)
-	updateChan := make(chan util.ISBN)
-	csvChan := make(chan bool)
-
-	var wg sync.WaitGroup
+	bookChan := make(chan api.Book)
+	isbnChan := make(chan util.ISBN)
+	updateErrorChan := make(chan error)
+	csvWriteSuccessChan := make(chan bool)
 
 	// Fetch books from the index endpoint
-	wg.Add(1)
-	go s.fetchBooks(indexChan, &wg)
+	go s.fetchBooks(bookChan)
 
 	// Convert ISBN-10 <=> ISBN-13
-	numConverters := 4
-	for i := 0; i < numConverters; i++ {
-		wg.Add(1)
-		go s.convertISBN(indexChan, convertChan, &wg)
-	}
+	go s.convertISBN(bookChan, isbnChan)
 
 	// Update missing ISBNs via the update endpoint
-	numUpdaters := 2
-	for i := 0; i < numUpdaters; i++ {
-		wg.Add(1)
-		go s.updateISBN(convertChan, updateChan, &wg)
-	}
+	go s.updateISBN(isbnChan, updateErrorChan)
 
 	// Append new ISBNs to a CSV file
-	wg.Add(1)
-	go s.appendToCSV(updateChan, csvChan, &wg)
+	go s.appendToCSV(isbnChan, csvWriteSuccessChan)
 
-	for range csvChan {
-		s.csvWriter.Flush()
+	successfulWrites := 0
+	for isSuccess := range csvWriteSuccessChan {
+		if isSuccess {
+			successfulWrites++
+		}
 	}
-	wg.Wait()
+
+	s.csvWriter.Flush()
+	if err := s.csvWriter.Error(); err != nil {
+		fmt.Println("Error closing CSV writer:", err)
+	}
 }
 
 // fetchBooks Fetch books from the index endpoint
-func (s *ISBNService) fetchBooks(ch chan<- api.Book, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (s *ISBNService) fetchBooks(outChan chan<- api.Book) {
+	defer close(outChan)
 
 	nextPage := int32(1)
 
-	for nextPage != -1 {
+	for nextPage != 0 {
 		res, err := s.client.Get(fmt.Sprintf("%s/books?page=%d", s.apiBasePath, nextPage))
 		if err != nil {
 			log.Println("Error making HTTP request:", err)
@@ -93,22 +92,18 @@ func (s *ISBNService) fetchBooks(ch chan<- api.Book, wg *sync.WaitGroup) {
 		}
 
 		for _, book := range data.Items {
-			ch <- book
+			outChan <- book
 		}
 
 		nextPage = data.NextPage
-		if data.NextPage == 0 {
-			nextPage = -1
-		}
 	}
-	close(ch)
 }
 
 // convertISBN Convert ISBN-10 <=> ISBN-13
-func (s *ISBNService) convertISBN(inputChan <-chan api.Book, outputChan chan<- util.ISBN, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (s *ISBNService) convertISBN(inChan <-chan api.Book, outChan chan<- util.ISBN) {
+	defer close(outChan)
 
-	for book := range inputChan {
+	for book := range inChan {
 		var isbn util.ISBN
 		if len(book.ISBN13) != 13 {
 			isbn = *util.NewISBN(book.ISBN10)
@@ -118,47 +113,48 @@ func (s *ISBNService) convertISBN(inputChan <-chan api.Book, outputChan chan<- u
 			continue
 		}
 
-		outputChan <- isbn
+		outChan <- isbn
 	}
 }
 
 // updateISBN Update missing ISBNs via the update endpoint
-func (s *ISBNService) updateISBN(inputChan <-chan util.ISBN, outputChan chan<- util.ISBN, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (s *ISBNService) updateISBN(inChan <-chan util.ISBN, outChan chan<- error) {
+	defer close(outChan)
 
-	for isbn := range inputChan {
+	for isbn := range inChan {
 		url := fmt.Sprintf("%s/books/%s", s.apiBasePath, isbn.ISBN13)
 		data, err := json.Marshal(isbn)
 		if err != nil {
 			log.Printf("error encoding data: %v\n", err)
-			return
+			outChan <- err
+			continue
 		}
 		req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(data))
 		if err != nil {
 			log.Printf("error making HTTP PUT request: %v\n", err)
-			return
+			outChan <- err
+			continue
 		}
 		req.Header.Set("Content-Type", "application/json")
 		res, err := s.client.Do(req)
 		if err != nil {
 			log.Printf("error making HTTP PUT request: %v\n", err)
-			return
+			outChan <- err
+			continue
 		}
 		defer res.Body.Close()
 		if res.StatusCode != http.StatusOK {
 			log.Printf("received non-OK status code: %d\n", res.StatusCode)
-			return
+			outChan <- fmt.Errorf("error: received non-OK status code: %d", res.StatusCode)
+			continue
 		}
-
-		outputChan <- isbn
 	}
 }
 
 // appendToCSV Append new ISBNs to a CSV file
-func (s *ISBNService) appendToCSV(inputChan <-chan util.ISBN, outputChan chan<- bool, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	for isbn := range inputChan {
+func (s *ISBNService) appendToCSV(inChan <-chan util.ISBN, outChan chan<- bool) {
+	defer close(outChan)
+	for isbn := range inChan {
 		var record []string
 		if isbn.SourceType == util.ISBN13 {
 			record = []string{isbn.ISBN13}
@@ -167,6 +163,6 @@ func (s *ISBNService) appendToCSV(inputChan <-chan util.ISBN, outputChan chan<- 
 		}
 		s.csvWriter.Write(record)
 
-		outputChan <- true
+		outChan <- true
 	}
 }

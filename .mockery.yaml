@@ -1,8 +1,22 @@
 packages:
-  github.com/emiliogozo/xyz-books/db/sqlc:
+  github.com/atsuyaourt/xyz-books/db/sqlc:
     interfaces:
       Store:
         config:
-          dir: "db/mocks"
-          filename: "store.go"
-          outpkg: "mockdb"
+          dir: 'db/mocks'
+          filename: 'store.go'
+          outpkg: 'mockdb'
+  github.com/atsuyaourt/xyz-books/internal/util:
+    interfaces:
+      Writer:
+        config:
+          dir: 'internal/mocks/util'
+          filename: 'writer.go'
+          outpkg: 'mockutil'
+  github.com/atsuyaourt/xyz-books/internal/service:
+    interfaces:
+      HTTPClient:
+        config:
+          dir: 'internal/mocks/service'
+          filename: 'http_client.go'
+          outpkg: 'mockhttp'
