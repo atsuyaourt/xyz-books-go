@@ -31,12 +31,12 @@ test:
 	go test -v -cover -short ./...
 
 swag:
-	swag fmt -d cmd/api/main.go,internal/api
-	swag init -o internal/docs/api -d cmd/api,internal/api
+	swag fmt -d cmd/server/main.go,internal/api
+	swag init -o internal/docs/api -d cmd/server,internal/api
 
 server:
-	yarn build
-	go run cmd/api/main.go
+	pnpm -F frontend build
+	go run cmd/server/main.go
 
 
 .PHONY: createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration \

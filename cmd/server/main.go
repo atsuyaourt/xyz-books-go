@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/atsuyaourt/xyz-books/internal/api"
+	"github.com/atsuyaourt/xyz-books/internal"
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	docs "github.com/atsuyaourt/xyz-books/internal/docs/api"
 	"github.com/atsuyaourt/xyz-books/internal/service"
@@ -85,7 +85,7 @@ func main() {
 }
 
 func runGinServer(config util.Config, store db.Store) {
-	server, err := api.NewServer(config, store)
+	server, err := internal.NewServer(config, store)
 	if err != nil {
 		log.Fatalf("cannot create server: %s", err)
 	}
