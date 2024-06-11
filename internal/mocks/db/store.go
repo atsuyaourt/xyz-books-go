@@ -5,7 +5,7 @@ package mockdb
 import (
 	context "context"
 
-	db "github.com/atsuyaourt/xyz-books/db/sqlc"
+	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	mock "github.com/stretchr/testify/mock"
 )
 

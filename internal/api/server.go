@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	db "github.com/atsuyaourt/xyz-books/db/sqlc"
+	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 
 	"github.com/gin-contrib/cors"

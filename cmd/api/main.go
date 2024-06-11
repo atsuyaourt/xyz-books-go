@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	db "github.com/atsuyaourt/xyz-books/db/sqlc"
 	"github.com/atsuyaourt/xyz-books/internal/api"
+	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	docs "github.com/atsuyaourt/xyz-books/internal/docs/api"
 	"github.com/atsuyaourt/xyz-books/internal/service"
 	"github.com/atsuyaourt/xyz-books/internal/util"

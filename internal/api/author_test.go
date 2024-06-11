@@ -9,8 +9,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	mockdb "github.com/atsuyaourt/xyz-books/db/mocks"
-	db "github.com/atsuyaourt/xyz-books/db/sqlc"
+	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
+	mockdb "github.com/atsuyaourt/xyz-books/internal/mocks/db"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
