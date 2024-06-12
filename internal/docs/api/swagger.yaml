@@ -82,61 +82,10 @@ definitions:
     - publisher
     type: object
   PaginatedAuthors:
-    properties:
-      current_page:
-        type: integer
-      items:
-        items:
-          $ref: '#/definitions/Author'
-        type: array
-      next_page:
-        type: integer
-      per_page:
-        type: integer
-      prev_page:
-        type: integer
-      total_items:
-        type: integer
-      total_pages:
-        type: integer
     type: object
   PaginatedBooks:
-    properties:
-      current_page:
-        type: integer
-      items:
-        items:
-          $ref: '#/definitions/Book'
-        type: array
-      next_page:
-        type: integer
-      per_page:
-        type: integer
-      prev_page:
-        type: integer
-      total_items:
-        type: integer
-      total_pages:
-        type: integer
     type: object
   PaginatedPublishers:
-    properties:
-      current_page:
-        type: integer
-      items:
-        items:
-          $ref: '#/definitions/Publisher'
-        type: array
-      next_page:
-        type: integer
-      per_page:
-        type: integer
-      prev_page:
-        type: integer
-      total_items:
-        type: integer
-      total_pages:
-        type: integer
     type: object
   Publisher:
     properties:

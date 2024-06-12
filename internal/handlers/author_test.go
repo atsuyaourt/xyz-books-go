@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"bytes"
@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreatePublisherAPI(t *testing.T) {
-	publisher := randomPublisher(t)
+func TestCreateAuthorAPI(t *testing.T) {
+	author := randomAuthor(t)
 
 	testCases := []struct {
 		name          string
@@ -29,11 +29,13 @@ func TestCreatePublisherAPI(t *testing.T) {
 		{
 			name: "Default",
 			body: gin.H{
-				"publisher_name": publisher.PublisherName,
+				"first_name":  author.FirstName,
+				"last_name":   author.LastName,
+				"middle_name": author.MiddleName,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().CreatePublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, nil)
+				store.EXPECT().CreateAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -43,15 +45,58 @@ func TestCreatePublisherAPI(t *testing.T) {
 		{
 			name: "InternalError",
 			body: gin.H{
-				"publisher_name": publisher.PublisherName,
+				"first_name":  author.FirstName,
+				"last_name":   author.LastName,
+				"middle_name": author.MiddleName,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().CreatePublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, sql.ErrConnDone)
+				store.EXPECT().CreateAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, sql.ErrConnDone)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name: "NoMiddle",
+			body: gin.H{
+				"first_name": author.FirstName,
+				"last_name":  author.LastName,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().CreateAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, nil)
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
+				store.AssertExpectations(t)
+				require.Equal(t, http.StatusCreated, recorder.Code)
+			},
+		},
+		{
+			name: "NoFirst",
+			body: gin.H{
+				"last_name":   author.LastName,
+				"middle_name": author.MiddleName,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
+				store.AssertExpectations(t)
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
+			name: "NoLast",
+			body: gin.H{
+				"first_name":  author.FirstName,
+				"middle_name": author.MiddleName,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+			},
+			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
+				store.AssertExpectations(t)
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
 	}
@@ -63,26 +108,29 @@ func TestCreatePublisherAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.POST("/authors", handler.CreateAuthor)
+
 			recorder := httptest.NewRecorder()
 
-			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := fmt.Sprintf("%s/publishers", server.config.APIBasePath)
+			url := "/authors"
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
 	}
 }
 
-func TestGetPublisherAPI(t *testing.T) {
-	publisher := randomPublisher(t)
+func TestGetAuthorAPI(t *testing.T) {
+	author := randomAuthor(t)
 
 	testCases := []struct {
 		name          string
@@ -92,10 +140,10 @@ func TestGetPublisherAPI(t *testing.T) {
 	}{
 		{
 			name: "Default",
-			id:   publisher.PublisherID,
+			id:   author.AuthorID,
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().GetPublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, nil)
+				store.EXPECT().GetAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -104,10 +152,10 @@ func TestGetPublisherAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			id:   publisher.PublisherID,
+			id:   author.AuthorID,
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().GetPublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, sql.ErrConnDone)
+				store.EXPECT().GetAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, sql.ErrConnDone)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -116,10 +164,10 @@ func TestGetPublisherAPI(t *testing.T) {
 		},
 		{
 			name: "NotFound",
-			id:   publisher.PublisherID,
+			id:   author.AuthorID,
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().GetPublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, db.ErrRecordNotFound)
+				store.EXPECT().GetAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -135,43 +183,47 @@ func TestGetPublisherAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.GET("/authors/:id", handler.GetAuthor)
+
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("%s/publishers/%d", server.config.APIBasePath, tc.id)
+			url := fmt.Sprintf("/authors/%d", tc.id)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
 	}
 }
 
-func TestListPublishersAPI(t *testing.T) {
+func TestListAuthorsAPI(t *testing.T) {
 	n := 10
-	publishers := make([]db.Publisher, n)
-	for i := range publishers {
-		publishers[i] = randomPublisher(t)
+	authors := make([]db.Author, n)
+	for i := 0; i < n; i++ {
+		authors[i] = randomAuthor(t)
 	}
 
 	testCases := []struct {
 		name          string
-		query         listPublishersReq
+		query         listAuthorsReq
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recoder *httptest.ResponseRecorder, store *mockdb.MockStore)
 	}{
 		{
 			name: "Default",
-			query: listPublishersReq{
+			query: listAuthorsReq{
 				Page:    1,
 				PerPage: int32(n),
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().ListPublishers(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(publishers, nil)
-				store.EXPECT().CountPublishers(mock.AnythingOfType("*gin.Context")).Return(int64(n), nil)
+				store.EXPECT().ListAuthors(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(authors, nil)
+				store.EXPECT().CountAuthors(mock.AnythingOfType("*gin.Context")).Return(int64(n), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -180,13 +232,13 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			query: listPublishersReq{
+			query: listAuthorsReq{
 				Page:    1,
 				PerPage: int32(n),
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().ListPublishers(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return([]db.Publisher{}, sql.ErrConnDone)
+				store.EXPECT().ListAuthors(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return([]db.Author{}, sql.ErrConnDone)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -195,40 +247,40 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "InvalidPage",
-			query: listPublishersReq{
+			query: listAuthorsReq{
 				Page:    -1,
 				PerPage: int32(n),
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
-				store.AssertNotCalled(t, "ListPublishers", mock.AnythingOfType("*gin.Context"), mock.Anything)
+				store.AssertNotCalled(t, "ListAuthors", mock.AnythingOfType("*gin.Context"), mock.Anything)
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
 		{
 			name: "InvalidLimit",
-			query: listPublishersReq{
+			query: listAuthorsReq{
 				Page:    1,
-				PerPage: 10000,
+				PerPage: -4,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
-				store.AssertNotCalled(t, "ListPublishers", mock.AnythingOfType("*gin.Context"), mock.Anything)
+				store.AssertNotCalled(t, "ListAuthors", mock.AnythingOfType("*gin.Context"), mock.Anything)
 				require.Equal(t, http.StatusBadRequest, recorder.Code)
 			},
 		},
 		{
 			name: "EmptySlice",
-			query: listPublishersReq{
+			query: listAuthorsReq{
 				Page:    1,
 				PerPage: int32(n),
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().ListPublishers(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return([]db.Publisher{}, nil)
-				store.EXPECT().CountPublishers(mock.AnythingOfType("*gin.Context")).Return(int64(n), nil)
+				store.EXPECT().ListAuthors(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return([]db.Author{}, nil)
+				store.EXPECT().CountAuthors(mock.AnythingOfType("*gin.Context")).Return(int64(n), nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -237,14 +289,14 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "CountInternalError",
-			query: listPublishersReq{
+			query: listAuthorsReq{
 				Page:    1,
 				PerPage: int32(n),
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().ListPublishers(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return([]db.Publisher{}, nil)
-				store.EXPECT().CountPublishers(mock.AnythingOfType("*gin.Context")).Return(0, sql.ErrConnDone)
+				store.EXPECT().ListAuthors(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return([]db.Author{}, nil)
+				store.EXPECT().CountAuthors(mock.AnythingOfType("*gin.Context")).Return(0, sql.ErrConnDone)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -260,29 +312,32 @@ func TestListPublishersAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.GET("/authors", handler.ListAuthors)
+
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("%s/publishers", server.config.APIBasePath)
+			url := "/authors"
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
-			// Add query parameters to request URL
 			q := request.URL.Query()
 			q.Add("page", fmt.Sprintf("%d", tc.query.Page))
 			q.Add("per_page", fmt.Sprintf("%d", tc.query.PerPage))
 			request.URL.RawQuery = q.Encode()
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
 	}
 }
 
-func TestUpdatePublisherAPI(t *testing.T) {
-	publisher := randomPublisher(t)
-	updatedPublisher := randomPublisher(t)
+func TestUpdateAuthorAPI(t *testing.T) {
+	author := randomAuthor(t)
+	updatedAuthor := randomAuthor(t)
 
 	testCases := []struct {
 		name          string
@@ -293,13 +348,15 @@ func TestUpdatePublisherAPI(t *testing.T) {
 	}{
 		{
 			name: "Default",
-			id:   publisher.PublisherID,
+			id:   author.AuthorID,
 			body: gin.H{
-				"publisher_name": updatedPublisher.PublisherName,
+				"first_name":  updatedAuthor.FirstName,
+				"last_name":   updatedAuthor.LastName,
+				"middle_name": updatedAuthor.MiddleName,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().UpdatePublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, nil)
+				store.EXPECT().UpdateAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -308,13 +365,15 @@ func TestUpdatePublisherAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			id:   publisher.PublisherID,
+			id:   updatedAuthor.AuthorID,
 			body: gin.H{
-				"publisher_name": updatedPublisher.PublisherName,
+				"first_name":  updatedAuthor.FirstName,
+				"last_name":   updatedAuthor.LastName,
+				"middle_name": updatedAuthor.MiddleName,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().UpdatePublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, sql.ErrConnDone)
+				store.EXPECT().UpdateAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, sql.ErrConnDone)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -323,13 +382,15 @@ func TestUpdatePublisherAPI(t *testing.T) {
 		},
 		{
 			name: "NotFound",
-			id:   publisher.PublisherID,
+			id:   updatedAuthor.AuthorID,
 			body: gin.H{
-				"publisher_name": updatedPublisher.PublisherName,
+				"first_name":  updatedAuthor.FirstName,
+				"last_name":   updatedAuthor.LastName,
+				"middle_name": updatedAuthor.MiddleName,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().UpdatePublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
-					Return(db.Publisher{}, db.ErrRecordNotFound)
+				store.EXPECT().UpdateAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
+					Return(db.Author{}, db.ErrRecordNotFound)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
 				store.AssertExpectations(t)
@@ -345,26 +406,29 @@ func TestUpdatePublisherAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.PUT("/authors/:id", handler.UpdateAuthor)
+
 			recorder := httptest.NewRecorder()
 
-			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := fmt.Sprintf("%s/publishers/%d", server.config.APIBasePath, tc.id)
+			url := fmt.Sprintf("/authors/%d", tc.id)
 			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
 	}
 }
 
-func TestDeletePublisherAPI(t *testing.T) {
-	publisher := randomPublisher(t)
+func TestDeleteAuthorAPI(t *testing.T) {
+	author := randomAuthor(t)
 
 	testCases := []struct {
 		name          string
@@ -374,9 +438,9 @@ func TestDeletePublisherAPI(t *testing.T) {
 	}{
 		{
 			name: "Default",
-			id:   publisher.PublisherID,
+			id:   author.AuthorID,
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().DeletePublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
+				store.EXPECT().DeleteAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
 					Return(nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
@@ -386,9 +450,9 @@ func TestDeletePublisherAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			id:   publisher.PublisherID,
+			id:   author.AuthorID,
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().DeletePublisher(mock.AnythingOfType("*gin.Context"), mock.Anything).
+				store.EXPECT().DeleteAuthor(mock.AnythingOfType("*gin.Context"), mock.Anything).
 					Return(sql.ErrConnDone)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder, store *mockdb.MockStore) {
@@ -405,23 +469,29 @@ func TestDeletePublisherAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.DELETE("/authors/:id", handler.DeleteAuthor)
+
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("%s/publishers/%d", server.config.APIBasePath, tc.id)
+			url := fmt.Sprintf("/authors/%d", tc.id)
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
 	}
 }
 
-func randomPublisher(t *testing.T) db.Publisher {
-	return db.Publisher{
-		PublisherID:   util.RandomInt(1, 111),
-		PublisherName: util.RandomString(24),
+func randomAuthor(t *testing.T) db.Author {
+	return db.Author{
+		AuthorID:   util.RandomInt(1, 111),
+		FirstName:  util.RandomString(12),
+		LastName:   util.RandomString(16),
+		MiddleName: util.RandomString(6),
 	}
 }

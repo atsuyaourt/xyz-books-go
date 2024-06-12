@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/atsuyaourt/xyz-books/internal/api"
+	"github.com/atsuyaourt/xyz-books/internal/models"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 )
 
@@ -41,7 +41,7 @@ func NewISBNService(serverAddress string, outputPath string) *ISBNService {
 }
 
 func (s *ISBNService) Run() {
-	bookChan := make(chan api.Book)
+	bookChan := make(chan models.Book)
 	isbnChan := make(chan util.ISBN)
 	updateErrorChan := make(chan error)
 	csvWriteSuccessChan := make(chan bool)
@@ -72,7 +72,7 @@ func (s *ISBNService) Run() {
 }
 
 // fetchBooks Fetch books from the index endpoint
-func (s *ISBNService) fetchBooks(outChan chan<- api.Book) {
+func (s *ISBNService) fetchBooks(outChan chan<- models.Book) {
 	defer close(outChan)
 
 	nextPage := int32(1)
@@ -85,7 +85,7 @@ func (s *ISBNService) fetchBooks(outChan chan<- api.Book) {
 		}
 		defer res.Body.Close()
 
-		var data api.PaginatedBooks
+		var data models.PaginatedBooks
 		if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
 			log.Println("Error decoding JSON:", err)
 			return
@@ -100,7 +100,7 @@ func (s *ISBNService) fetchBooks(outChan chan<- api.Book) {
 }
 
 // convertISBN Convert ISBN-10 <=> ISBN-13
-func (s *ISBNService) convertISBN(inChan <-chan api.Book, outChan chan<- util.ISBN) {
+func (s *ISBNService) convertISBN(inChan <-chan models.Book, outChan chan<- util.ISBN) {
 	defer close(outChan)
 
 	for book := range inChan {

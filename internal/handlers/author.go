@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"database/sql"
@@ -6,17 +6,13 @@ import (
 	"net/http"
 
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
+	"github.com/atsuyaourt/xyz-books/internal/models"
+	"github.com/atsuyaourt/xyz-books/internal/util"
 	"github.com/gin-gonic/gin"
 )
 
-type Author struct {
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	MiddleName string `json:"middle_name"`
-} //@name Author
-
-func newAuthor(arg db.Author) Author {
-	return Author{
+func newAuthor(arg db.Author) models.Author {
+	return models.Author{
 		FirstName:  arg.FirstName,
 		LastName:   arg.LastName,
 		MiddleName: arg.LastName,
@@ -36,9 +32,9 @@ type createAuthorReq struct {
 //	@Accept		json
 //	@Produce	json
 //	@Param		req	body		createAuthorReq	true	"Create author parameters"
-//	@Success	201	{object}	Author
+//	@Success	201	{object}	models.Author
 //	@Router		/authors [post]
-func (s *Server) CreateAuthor(ctx *gin.Context) {
+func (h *DefaultHandler) CreateAuthor(ctx *gin.Context) {
 	var req createAuthorReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -47,7 +43,7 @@ func (s *Server) CreateAuthor(ctx *gin.Context) {
 
 	arg := db.CreateAuthorParams(req)
 
-	author, err := s.store.CreateAuthor(ctx, arg)
+	author, err := h.store.CreateAuthor(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -67,16 +63,16 @@ type getAuthorReq struct {
 //	@Accept		json
 //	@Produce	json
 //	@Param		id	path		int	true	"author ID"
-//	@Success	200	{object}	Author
+//	@Success	200	{object}	models.Author
 //	@Router		/authors/{id} [get]
-func (s *Server) GetAuthor(ctx *gin.Context) {
+func (h *DefaultHandler) GetAuthor(ctx *gin.Context) {
 	var req getAuthorReq
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	author, err := s.store.GetAuthor(ctx, req.ID)
+	author, err := h.store.GetAuthor(ctx, req.ID)
 	if err != nil {
 		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("author not found")))
@@ -94,8 +90,6 @@ type listAuthorsReq struct {
 	PerPage int32 `form:"per_page,default=5" binding:"omitempty,min=1"` // limit
 } //@name ListAuthorsParams
 
-type PaginatedAuthors = PaginatedList[Author] //@name PaginatedAuthors
-
 // ListAuthors
 //
 //	@Summary	List authors
@@ -103,9 +97,9 @@ type PaginatedAuthors = PaginatedList[Author] //@name PaginatedAuthors
 //	@Accept		json
 //	@Produce	json
 //	@Param		req	query		listAuthorsReq	false	"List authors parameters"
-//	@Success	200	{object}	PaginatedAuthors
+//	@Success	200	{object}	models.PaginatedAuthors
 //	@Router		/authors [get]
-func (s *Server) ListAuthors(ctx *gin.Context) {
+func (h *DefaultHandler) ListAuthors(ctx *gin.Context) {
 	var req listAuthorsReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -118,25 +112,25 @@ func (s *Server) ListAuthors(ctx *gin.Context) {
 		Limit:  int64(req.PerPage),
 		Offset: int64(offset),
 	}
-	authors, err := s.store.ListAuthors(ctx, arg)
+	authors, err := h.store.ListAuthors(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
 	numAuthors := len(authors)
-	items := make([]Author, numAuthors)
+	items := make([]models.Author, numAuthors)
 	for i, author := range authors {
 		items[i] = newAuthor(author)
 	}
 
-	count, err := s.store.CountAuthors(ctx)
+	count, err := h.store.CountAuthors(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	res := NewPaginatedList[Author](req.Page, req.PerPage, int32(count), items)
+	res := util.NewPaginatedList(req.Page, req.PerPage, int32(count), items)
 
 	ctx.JSON(http.StatusOK, res)
 }
@@ -159,9 +153,9 @@ type updateAuthorReq struct {
 //	@Produce	json
 //	@Param		id	path		int				true	"author ID"
 //	@Param		req	body		updateAuthorReq	true	"Update author parameters"
-//	@Success	200	{object}	Author
+//	@Success	200	{object}	models.Author
 //	@Router		/authors/{id} [put]
-func (s *Server) UpdateAuthor(ctx *gin.Context) {
+func (h *DefaultHandler) UpdateAuthor(ctx *gin.Context) {
 	var uri updateAuthorUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -190,7 +184,7 @@ func (s *Server) UpdateAuthor(ctx *gin.Context) {
 		},
 	}
 
-	author, err := s.store.UpdateAuthor(ctx, arg)
+	author, err := h.store.UpdateAuthor(ctx, arg)
 	if err != nil {
 		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("author not found")))
@@ -216,14 +210,14 @@ type deleteAuthorUri struct {
 //	@Param		id	path	int	true	"author ID"
 //	@Success	204
 //	@Router		/authors/{id} [delete]
-func (s *Server) DeleteAuthor(ctx *gin.Context) {
+func (h *DefaultHandler) DeleteAuthor(ctx *gin.Context) {
 	var req deleteAuthorUri
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	err := s.store.DeleteAuthor(ctx, req.ID)
+	err := h.store.DeleteAuthor(ctx, req.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

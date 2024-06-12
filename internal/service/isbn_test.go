@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/atsuyaourt/xyz-books/internal/api"
 	mockhttp "github.com/atsuyaourt/xyz-books/internal/mocks/service"
 	mockutil "github.com/atsuyaourt/xyz-books/internal/mocks/util"
+	"github.com/atsuyaourt/xyz-books/internal/models"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 
 	"github.com/stretchr/testify/mock"
@@ -40,11 +40,11 @@ func TestFetchBooks(t *testing.T) {
 		mClient.EXPECT().Get(mock.Anything).Return(res, err).Once()
 		nextPage = int(data.NextPage)
 	}
-	ch := make(chan api.Book)
+	ch := make(chan models.Book)
 
 	go s.fetchBooks(ch)
 
-	var receivedBooks []api.Book
+	var receivedBooks []models.Book
 	for book := range ch {
 		receivedBooks = append(receivedBooks, book)
 	}
@@ -54,7 +54,7 @@ func TestFetchBooks(t *testing.T) {
 }
 
 func TestConvertISBN(t *testing.T) {
-	inChan := make(chan api.Book)
+	inChan := make(chan models.Book)
 	outChan := make(chan util.ISBN)
 
 	s := newMockISBNService(t, nil, nil)
@@ -62,7 +62,7 @@ func TestConvertISBN(t *testing.T) {
 	go s.convertISBN(inChan, outChan)
 
 	booksWithMissingISBN := loadBooksFromFile("test_books_missing_isbn.json")
-	go func(books []api.Book) {
+	go func(books []models.Book) {
 		for _, b := range books {
 			inChan <- b
 		}
@@ -70,11 +70,11 @@ func TestConvertISBN(t *testing.T) {
 	}(booksWithMissingISBN)
 
 	books := loadBooksFromFile("test_books.json")
-	slices.SortFunc(books, func(a, b api.Book) int { return cmp.Compare(a.ISBN13, b.ISBN13) })
+	slices.SortFunc(books, func(a, b models.Book) int { return cmp.Compare(a.ISBN13, b.ISBN13) })
 	var actualISBNs []util.ISBN
 	for isbn := range outChan {
 		actualISBNs = append(actualISBNs, isbn)
-		idx, found := slices.BinarySearchFunc(books, isbn, func(b api.Book, i util.ISBN) int { return cmp.Compare(b.ISBN13, i.ISBN13) })
+		idx, found := slices.BinarySearchFunc(books, isbn, func(b models.Book, i util.ISBN) int { return cmp.Compare(b.ISBN13, i.ISBN13) })
 		require.True(t, found)
 		require.Positive(t, idx)
 	}
@@ -207,7 +207,7 @@ func TestAppendToCSV(t *testing.T) {
 	require.Len(t, isbns, successCount)
 }
 
-func mockGetFunc[T any](page, perPage int, items []T) (*api.PaginatedList[T], *http.Response, error) {
+func mockGetFunc[T any](page, perPage int, items []T) (*util.PaginatedList[T], *http.Response, error) {
 	totalItems := len(items)
 
 	start := (page - 1) * perPage
@@ -216,7 +216,7 @@ func mockGetFunc[T any](page, perPage int, items []T) (*api.PaginatedList[T], *h
 		end = totalItems
 	}
 
-	_data := api.NewPaginatedList(int32(page), int32(perPage), int32(totalItems), items[start:end])
+	_data := util.NewPaginatedList(int32(page), int32(perPage), int32(totalItems), items[start:end])
 
 	data, err := json.Marshal(_data)
 	if err != nil {
@@ -237,7 +237,7 @@ func mockGetFunc[T any](page, perPage int, items []T) (*api.PaginatedList[T], *h
 	}, nil
 }
 
-func loadBooksFromFile(fileName string) []api.Book {
+func loadBooksFromFile(fileName string) []models.Book {
 	// Read the JSON file
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -254,7 +254,7 @@ func loadBooksFromFile(fileName string) []api.Book {
 	}
 
 	// Unmarshal the JSON into a slice of Book structs
-	var books []api.Book
+	var books []models.Book
 	err = json.Unmarshal(byteValue, &books)
 	if err != nil {
 		fmt.Printf("Error unmarshalling JSON: %v\n", err)

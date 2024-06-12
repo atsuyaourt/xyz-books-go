@@ -31,8 +31,8 @@ test:
 	go test -v -cover -short ./...
 
 swag:
-	swag fmt -d cmd/server/main.go,internal/api
-	swag init -o internal/docs/api -d cmd/server,internal/api
+	swag fmt -d cmd/server/main.go,internal/handlers
+	swag init -o internal/docs/api -d cmd/server,internal/handlers,internal/models
 
 server:
 	pnpm -F frontend build

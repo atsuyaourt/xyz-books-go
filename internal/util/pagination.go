@@ -1,4 +1,4 @@
-package api
+package util
 
 type PaginatedList[T any] struct {
 	CurrentPage int32 `json:"current_page"`

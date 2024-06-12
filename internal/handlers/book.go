@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"database/sql"
@@ -7,23 +7,12 @@ import (
 	"strings"
 
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
+	"github.com/atsuyaourt/xyz-books/internal/models"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
-
-type Book struct {
-	Title           string   `json:"title"`
-	ISBN13          string   `json:"isbn13"`
-	ISBN10          string   `json:"isbn10"`
-	Price           float64  `json:"price"`
-	PublicationYear int64    `json:"publication_year"`
-	ImageUrl        string   `json:"image_url"`
-	Edition         string   `json:"edition"`
-	Authors         []string `json:"authors"`
-	Publisher       string   `json:"publisher"`
-} //@name Book
 
 type newBookArg struct {
 	Book      db.Book
@@ -31,8 +20,8 @@ type newBookArg struct {
 	Authors   []string
 }
 
-func newBook(arg newBookArg) Book {
-	res := Book{
+func newBook(arg newBookArg) models.Book {
+	res := models.Book{
 		Title:           arg.Book.Title,
 		Price:           arg.Book.Price,
 		PublicationYear: arg.Book.PublicationYear,
@@ -78,9 +67,9 @@ type createBookReq struct {
 //	@Accept		json
 //	@Produce	json
 //	@Param		req	body		createBookReq	true	"Create book parameters"
-//	@Success	201	{object}	Book
+//	@Success	201	{object}	models.Book
 //	@Router		/books [post]
-func (s *Server) CreateBook(ctx *gin.Context) {
+func (h *DefaultHandler) CreateBook(ctx *gin.Context) {
 	var req createBookReq
 	var err error
 	if err = ctx.ShouldBindJSON(&req); err != nil {
@@ -124,7 +113,7 @@ func (s *Server) CreateBook(ctx *gin.Context) {
 		Authors:   authors,
 	}
 
-	book, err := s.store.CreateBookTx(ctx, arg)
+	book, err := h.store.CreateBookTx(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -150,9 +139,9 @@ type getBookReq struct {
 //	@Accept		json
 //	@Produce	json
 //	@Param		isbn	path		string	true	"ISBN-13"
-//	@Success	200		{object}	Book
+//	@Success	200		{object}	models.Book
 //	@Router		/books/{isbn} [get]
-func (s *Server) GetBook(ctx *gin.Context) {
+func (h *DefaultHandler) GetBook(ctx *gin.Context) {
 	var req getBookReq
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -161,7 +150,7 @@ func (s *Server) GetBook(ctx *gin.Context) {
 
 	isbn := util.NewISBN(req.ISBN13)
 
-	book, err := s.store.GetBookByISBN(ctx, db.GetBookByISBNParams{
+	book, err := h.store.GetBookByISBN(ctx, db.GetBookByISBNParams{
 		Isbn13: sql.NullString{
 			String: isbn.ISBN13,
 			Valid:  true,
@@ -199,8 +188,6 @@ type listBooksReq struct {
 	PerPage            int32   `form:"per_page,default=5" binding:"omitempty,min=1,max=30"` // limit
 } //@name ListBooksParams
 
-type PaginatedBooks = PaginatedList[Book] //@name PaginatedBooks
-
 // ListBooks
 //
 //	@Summary	List books
@@ -208,9 +195,9 @@ type PaginatedBooks = PaginatedList[Book] //@name PaginatedBooks
 //	@Accept		json
 //	@Produce	json
 //	@Param		req	query		listBooksReq	false	"List books parameters"
-//	@Success	200	{object}	PaginatedBooks
+//	@Success	200	{object}	models.PaginatedBooks
 //	@Router		/books [get]
-func (s *Server) ListBooks(ctx *gin.Context) {
+func (h *DefaultHandler) ListBooks(ctx *gin.Context) {
 	var req listBooksReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -251,13 +238,13 @@ func (s *Server) ListBooks(ctx *gin.Context) {
 			Valid: req.MaxPublicationYear > req.MinPublicationYear,
 		},
 	}
-	rows, err := s.store.ListBooks(ctx, arg)
+	rows, err := h.store.ListBooks(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	var items []Book
+	var items []models.Book
 	for _, row := range rows {
 		items = append(items, newBook(newBookArg{
 			Book:      row.Book,
@@ -266,7 +253,7 @@ func (s *Server) ListBooks(ctx *gin.Context) {
 		}))
 	}
 
-	count, err := s.store.CountBooks(ctx, db.CountBooksParams{
+	count, err := h.store.CountBooks(ctx, db.CountBooksParams{
 		Title:              arg.Title,
 		Author:             arg.Author,
 		Publisher:          arg.Publisher,
@@ -280,7 +267,7 @@ func (s *Server) ListBooks(ctx *gin.Context) {
 		return
 	}
 
-	res := NewPaginatedList[Book](req.Page, req.PerPage, int32(count), items)
+	res := util.NewPaginatedList(req.Page, req.PerPage, int32(count), items)
 
 	ctx.JSON(http.StatusOK, res)
 }
@@ -306,9 +293,9 @@ type updateBookReq struct {
 //	@Produce	json
 //	@Param		isbn	path		string			true	"ISBN-13"
 //	@Param		req		body		updateBookReq	true	"Update book parameters"
-//	@Success	200		{object}	Book
+//	@Success	200		{object}	models.Book
 //	@Router		/books/{isbn} [put]
-func (s *Server) UpdateBook(ctx *gin.Context) {
+func (h *DefaultHandler) UpdateBook(ctx *gin.Context) {
 	var uri updateBookUri
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -376,7 +363,7 @@ func (s *Server) UpdateBook(ctx *gin.Context) {
 		}
 	}
 
-	_, err := s.store.UpdateBookByISBN(ctx, arg)
+	_, err := h.store.UpdateBookByISBN(ctx, arg)
 	if err != nil {
 		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("book not found")))
@@ -386,7 +373,7 @@ func (s *Server) UpdateBook(ctx *gin.Context) {
 		return
 	}
 
-	book, err := s.store.GetBookByISBN(ctx, db.GetBookByISBNParams{
+	book, err := h.store.GetBookByISBN(ctx, db.GetBookByISBNParams{
 		Isbn13: arg.Isbn13,
 	})
 	if err != nil {
@@ -418,14 +405,14 @@ type deleteBookUri struct {
 //	@Param		isbn	path	string	true	"ISBN-13"
 //	@Success	204
 //	@Router		/books/{isbn} [delete]
-func (s *Server) DeleteBook(ctx *gin.Context) {
+func (h *DefaultHandler) DeleteBook(ctx *gin.Context) {
 	var req deleteBookUri
 	if err := ctx.ShouldBindUri(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	err := s.store.DeleteBookByISBN(ctx, db.DeleteBookByISBNParams{
+	err := h.store.DeleteBookByISBN(ctx, db.DeleteBookByISBNParams{
 		Isbn13: sql.NullString{
 			String: req.ISBN13,
 			Valid:  true,

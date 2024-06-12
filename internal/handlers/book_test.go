@@ -1,4 +1,4 @@
-package api
+package handlers
 
 import (
 	"bytes"
@@ -89,18 +89,21 @@ func TestCreateBookAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.POST("/books", handler.CreateBook)
+
 			recorder := httptest.NewRecorder()
 
-			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := fmt.Sprintf("%s/books", server.config.APIBasePath)
+			url := "/books"
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
@@ -185,14 +188,18 @@ func TestGetBookAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.GET("/books/:isbn", handler.GetBook)
+
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("%s/books/%s", server.config.APIBasePath, tc.isbn)
+			url := fmt.Sprintf("/books/%s", tc.isbn)
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
@@ -310,10 +317,14 @@ func TestListBooksAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.GET("/books", handler.ListBooks)
+
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("%s/books", server.config.APIBasePath)
+			url := "/books"
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
@@ -323,7 +334,7 @@ func TestListBooksAPI(t *testing.T) {
 			q.Add("per_page", fmt.Sprintf("%d", tc.query.PerPage))
 			request.URL.RawQuery = q.Encode()
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
@@ -495,18 +506,21 @@ func TestUpdateBookAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.PUT("/books/:isbn", handler.UpdateBook)
+
 			recorder := httptest.NewRecorder()
 
-			// Marshal body data to JSON
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := fmt.Sprintf("%s/books/%s", server.config.APIBasePath, tc.isbn)
+			url := fmt.Sprintf("/books/%s", tc.isbn)
 			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
@@ -565,14 +579,18 @@ func TestDeleteBookAPI(t *testing.T) {
 			store := mockdb.NewMockStore(t)
 			tc.buildStubs(store)
 
-			server := newTestServer(t, store)
+			handler := newTestHandler(t, store)
+
+			router := gin.Default()
+			router.DELETE("/books/:isbn", handler.DeleteBook)
+
 			recorder := httptest.NewRecorder()
 
-			url := fmt.Sprintf("%s/books/%s", server.config.APIBasePath, tc.isbn)
+			url := fmt.Sprintf("/books/%s", tc.isbn)
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
-			server.router.ServeHTTP(recorder, request)
+			router.ServeHTTP(recorder, request)
 
 			tc.checkResponse(recorder, store)
 		})
