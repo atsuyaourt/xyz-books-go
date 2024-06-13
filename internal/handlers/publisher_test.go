@@ -11,6 +11,7 @@ import (
 
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	mockdb "github.com/atsuyaourt/xyz-books/internal/mocks/db"
+	"github.com/atsuyaourt/xyz-books/internal/services"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
@@ -166,13 +167,13 @@ func TestListPublishersAPI(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		query         listPublishersReq
+		query         services.ListPublishersReq
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recoder *httptest.ResponseRecorder, store *mockdb.MockStore)
 	}{
 		{
 			name: "Default",
-			query: listPublishersReq{
+			query: services.ListPublishersReq{
 				Page:    1,
 				PerPage: int32(n),
 			},
@@ -188,7 +189,7 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "InternalError",
-			query: listPublishersReq{
+			query: services.ListPublishersReq{
 				Page:    1,
 				PerPage: int32(n),
 			},
@@ -203,7 +204,7 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "InvalidPage",
-			query: listPublishersReq{
+			query: services.ListPublishersReq{
 				Page:    -1,
 				PerPage: int32(n),
 			},
@@ -216,7 +217,7 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "InvalidLimit",
-			query: listPublishersReq{
+			query: services.ListPublishersReq{
 				Page:    1,
 				PerPage: 10000,
 			},
@@ -229,7 +230,7 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "EmptySlice",
-			query: listPublishersReq{
+			query: services.ListPublishersReq{
 				Page:    1,
 				PerPage: int32(n),
 			},
@@ -245,7 +246,7 @@ func TestListPublishersAPI(t *testing.T) {
 		},
 		{
 			name: "CountInternalError",
-			query: listPublishersReq{
+			query: services.ListPublishersReq{
 				Page:    1,
 				PerPage: int32(n),
 			},

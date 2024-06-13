@@ -1,13 +1,12 @@
 package handlers
 
 import (
-	"database/sql"
 	"errors"
 	"net/http"
 
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	"github.com/atsuyaourt/xyz-books/internal/models"
-	"github.com/atsuyaourt/xyz-books/internal/util"
+	"github.com/atsuyaourt/xyz-books/internal/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,33 +16,29 @@ func newPublisher(arg db.Publisher) models.Publisher {
 	}
 }
 
-type createPublisherReq struct {
-	PublisherName string `json:"publisher_name" binding:"required,min=1"`
-} //@name CreatePublisherParams
-
 // CreatePublisher
 //
 //	@Summary	Create publisher
 //	@Tags		publishers
 //	@Accept		json
 //	@Produce	json
-//	@Param		req	body		createAuthorReq	true	"Create publisher parameters"
+//	@Param		req	body		services.CreateAuthorReq	true	"Create publisher parameters"
 //	@Success	201	{object}	models.Publisher
 //	@Router		/publishers [post]
 func (h *DefaultHandler) CreatePublisher(ctx *gin.Context) {
-	var req createPublisherReq
+	var req services.CreatePublisherReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	publisher, err := h.store.CreatePublisher(ctx, req.PublisherName)
+	res, err := h.service.CreatePublisher(ctx, req)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, newPublisher(publisher))
+	ctx.JSON(http.StatusCreated, res)
 }
 
 type getPublisherReq struct {
@@ -66,7 +61,7 @@ func (h *DefaultHandler) GetPublisher(ctx *gin.Context) {
 		return
 	}
 
-	publisher, err := h.store.GetPublisher(ctx, req.ID)
+	res, err := h.service.GetPublisher(ctx, req.ID)
 	if err != nil {
 		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("publisher not found")))
@@ -76,13 +71,8 @@ func (h *DefaultHandler) GetPublisher(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, newPublisher(publisher))
+	ctx.JSON(http.StatusOK, res)
 }
-
-type listPublishersReq struct {
-	Page    int32 `form:"page,default=1" binding:"omitempty,min=1"`            // page number
-	PerPage int32 `form:"per_page,default=5" binding:"omitempty,min=1,max=30"` // limit
-} //@name ListPublishersParams
 
 // ListPublishers
 //
@@ -90,41 +80,21 @@ type listPublishersReq struct {
 //	@Tags		publishers
 //	@Accept		json
 //	@Produce	json
-//	@Param		req	query		listPublishersReq	false	"List publishers parameters"
+//	@Param		req	query		services.ListPublishersReq	false	"List publishers parameters"
 //	@Success	200	{object}	models.PaginatedPublishers
 //	@Router		/publishers [get]
 func (h *DefaultHandler) ListPublishers(ctx *gin.Context) {
-	var req listPublishersReq
+	var req services.ListPublishersReq
 	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	offset := (req.Page - 1) * req.PerPage
-
-	arg := db.ListPublishersParams{
-		Limit:  int64(req.PerPage),
-		Offset: int64(offset),
-	}
-	publishers, err := h.store.ListPublishers(ctx, arg)
+	res, err := h.service.ListPublishers(ctx, req)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-
-	numPublishers := len(publishers)
-	items := make([]models.Publisher, numPublishers)
-	for i, publisher := range publishers {
-		items[i] = newPublisher(publisher)
-	}
-
-	count, err := h.store.CountPublishers(ctx)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	res := util.NewPaginatedList(req.Page, req.PerPage, int32(count), items)
 
 	ctx.JSON(http.StatusOK, res)
 }
@@ -133,10 +103,6 @@ type updatePublisherUri struct {
 	ID int64 `uri:"id" binding:"required,numeric"`
 }
 
-type updatePublisherReq struct {
-	PublisherName string `json:"publisher_name" binding:"omitempty,min=1"`
-} //@name UpdatePublisherParams
-
 // UpdatePublisher
 //
 //	@Summary	Update publisher
@@ -144,7 +110,7 @@ type updatePublisherReq struct {
 //	@Accept		json
 //	@Produce	json
 //	@Param		id	path		int	true	"publisher ID"
-//	@Param		req		body		updatePublisherReq	true	"Update publisher parameters"
+//	@Param		req		body		services.UpdatePublisherReq	true	"Update publisher parameters"
 //	@Success	200		{object}	models.Publisher
 //	@Router		/publishers/{id} [put]
 func (h *DefaultHandler) UpdatePublisher(ctx *gin.Context) {
@@ -154,21 +120,13 @@ func (h *DefaultHandler) UpdatePublisher(ctx *gin.Context) {
 		return
 	}
 
-	var req updatePublisherReq
+	var req services.UpdatePublisherReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
-	arg := db.UpdatePublisherParams{
-		PublisherID: uri.ID,
-		PublisherName: sql.NullString{
-			String: req.PublisherName,
-			Valid:  len(req.PublisherName) > 0,
-		},
-	}
-
-	publisher, err := h.store.UpdatePublisher(ctx, arg)
+	res, err := h.service.UpdatePublisher(ctx, uri.ID, req)
 	if err != nil {
 		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("publisher not found")))
@@ -178,7 +136,7 @@ func (h *DefaultHandler) UpdatePublisher(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, newPublisher(publisher))
+	ctx.JSON(http.StatusOK, res)
 }
 
 type deletePublisherUri struct {
@@ -201,7 +159,7 @@ func (h *DefaultHandler) DeletePublisher(ctx *gin.Context) {
 		return
 	}
 
-	err := h.store.DeletePublisher(ctx, req.ID)
+	err := h.service.DeletePublisher(ctx, req.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

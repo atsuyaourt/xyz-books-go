@@ -11,7 +11,7 @@ import (
 	"github.com/atsuyaourt/xyz-books/internal"
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	docs "github.com/atsuyaourt/xyz-books/internal/docs/api"
-	"github.com/atsuyaourt/xyz-books/internal/service"
+	"github.com/atsuyaourt/xyz-books/internal/services"
 	"github.com/atsuyaourt/xyz-books/internal/util"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -59,7 +59,7 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	isbnService := service.NewISBNService(config.HTTPServerAddress, config.OutputPath)
+	isbnService := services.NewISBNService(config.HTTPServerAddress, config.OutputPath)
 
 	wg.Add(1)
 	go func() {
