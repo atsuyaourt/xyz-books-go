@@ -22,4 +22,9 @@ type Handler interface {
 	GetPublisher(ctx *gin.Context)
 	UpdatePublisher(ctx *gin.Context)
 	DeletePublisher(ctx *gin.Context)
+
+	Index(ctx *gin.Context)
+
+	ShowBooks(ctx *gin.Context)
+	ShowBook(ctx *gin.Context)
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/a-h/templ"
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	"github.com/atsuyaourt/xyz-books/internal/services"
 
@@ -21,6 +22,11 @@ func NewDefaultHandler(store db.Store) (*DefaultHandler, error) {
 	}
 
 	return h, nil
+}
+
+func render(ctx *gin.Context, status int, template templ.Component) error {
+	ctx.Status(status)
+	return template.Render(ctx.Request.Context(), ctx.Writer)
 }
 
 func errorResponse(err error) gin.H {

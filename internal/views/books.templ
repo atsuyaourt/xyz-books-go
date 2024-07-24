@@ -1,0 +1,35 @@
+package views
+
+import (
+	"github.com/atsuyaourt/xyz-books/internal/views/components"
+	"github.com/atsuyaourt/xyz-books/internal/util"
+	"github.com/atsuyaourt/xyz-books/internal/models"
+)
+
+templ Books(books util.PaginatedList[models.Book]) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@components.Header()
+		<body class="w-full max-w-screen-xl mx-auto">
+			@components.Navbar()
+			<div
+				class="flex flex-col justify-center items-center gap-4 w-full"
+			>
+				<form
+					id="books-form"
+					hx-get="/books"
+					hx-trigger="change from:body #page,#per-page,#title,#author,#publisher"
+					hx-swap="outerHTML"
+					hx-target="#books"
+					hx-include="#page,#per-page,#title,#author,#publisher"
+					class="flex flex-col md:flex-row justify-center items-center gap-4 w-full md:w-5/6"
+				>
+					@components.Input(components.InputProps{ID: "title", Placeholder: "Title", Icon: "book"})
+					@components.Input(components.InputProps{ID: "author", Placeholder: "Author", Icon: "person"})
+					@components.Input(components.InputProps{ID: "publisher", Placeholder: "Publisher", Icon: "building"})
+				</form>
+				@components.Books(books)
+			</div>
+		</body>
+	</html>
+}

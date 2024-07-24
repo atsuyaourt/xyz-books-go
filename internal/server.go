@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -56,13 +55,12 @@ func (s *Server) setupCORS() {
 func (s *Server) setupRouter() {
 	r := s.router
 
-	if s.config.GinMode != gin.TestMode {
-		r.LoadHTMLFiles(fmt.Sprintf("%s/index.html", s.config.WebDistPath))
-		r.Static("/assets", fmt.Sprintf("%s/assets", s.config.WebDistPath))
-		r.GET("/", func(ctx *gin.Context) {
-			ctx.HTML(http.StatusOK, "index.html", gin.H{})
-		})
-	}
+	r.Static("/assets", "internal/assets")
+	r.GET("/", s.handler.Index)
+	r.GET("/:isbn", s.handler.ShowBook)
+
+	r.GET("/books", s.handler.ShowBooks)
+	r.GET("/books/:isbn", s.handler.ShowBook)
 }
 
 func (s *Server) setupAPIRouter() {

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_TAG="emiliogozo/xyz-books"
+BASE_TAG="atsuyaourt/xyz-books"
 DATE_STR="$(date +%Y%m%d)"
 
 # yarn build

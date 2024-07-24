@@ -1,0 +1,27 @@
+package components
+
+import (
+	"github.com/atsuyaourt/xyz-books/internal/models"
+	"strings"
+)
+
+templ BookCover(book *models.Book) {
+	<div class="flex shadow-md">
+		if book.ImageUrl != "" {
+			<img src={ book.ImageUrl } class="w-56 h-80 object-cover"/>
+		} else {
+			<div class="flex flex-col w-56 h-80 bg-blue-300 p-4">
+				<div class="border border-gray-700 w-11/12 mx-auto text-center">
+					<div class="bg-gray-700 text-gray-200 m-1 py-1.5 px-1">
+						<div class="text-lg font-bold">{ book.Title }</div>
+						<div class="text-xs font-semibold mt-2">{ strings.Join(book.Authors, ", ") }</div>
+					</div>
+				</div>
+				<div class="mx-auto text-center text-xs font-light text-gray-700">{ book.Edition }</div>
+				<div class="flex-grow"></div>
+				<div class="border border-gray-700 h-1 w-4/5 mx-auto"></div>
+				<div class="w-4/5 mx-auto mt-3 text-center text-gray-800">{ book.Publisher }</div>
+			</div>
+		}
+	</div>
+}

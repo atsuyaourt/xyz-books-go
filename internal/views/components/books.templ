@@ -1,0 +1,19 @@
+package components
+
+import (
+	"github.com/atsuyaourt/xyz-books/internal/util"
+	"github.com/atsuyaourt/xyz-books/internal/models"
+)
+
+templ Books(books util.PaginatedList[models.Book]) {
+	<div id="books" class="flex flex-col justify-center items-center">
+		<div class="p-4 grid grid-cols-3 md:grid-cols-5 gap-4">
+			for _, item := range books.Items {
+				<a href={ templ.URL("/" + item.ISBN13) } class="max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700">
+					@BookCover(&item)
+				</a>
+			}
+		</div>
+		@Pagination(books)
+	</div>
+}
