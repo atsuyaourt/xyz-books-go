@@ -30,11 +30,11 @@ func TestMain(m *testing.M) {
 
 	testConfig = util.Config{
 		MigrationSrc: "../../db/migrations",
-		DBDriver:     "sqlite3",
+		DBDriver:     "sqlite",
 		DBSource:     tempFile.Name(),
 	}
 
-	testDBUrl = fmt.Sprintf("sqlite3://%s?query", tempFile.Name())
+	testDBUrl = fmt.Sprintf("%s://%s?query", testConfig.DBDriver, testConfig.DBSource)
 
 	testDB, err := sql.Open(testConfig.DBDriver, testConfig.DBSource)
 	if err != nil {

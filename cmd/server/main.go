@@ -1,22 +1,29 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
-	"sync"
-	"time"
+	"os/signal"
+	"syscall"
 
 	"github.com/atsuyaourt/xyz-books/internal"
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	docs "github.com/atsuyaourt/xyz-books/internal/docs/api"
-	"github.com/atsuyaourt/xyz-books/internal/services"
 	"github.com/atsuyaourt/xyz-books/internal/util"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"golang.org/x/sync/errgroup"
 	_ "modernc.org/sqlite"
 )
+
+var interruptSignals = []os.Signal{
+	os.Interrupt,
+	syscall.SIGTERM,
+	syscall.SIGINT,
+}
 
 // XYZBooksAPI
 //
@@ -32,6 +39,9 @@ func main() {
 	}
 	docs.SwaggerInfo.BasePath = config.APIBasePath
 
+	ctx, stop := signal.NotifyContext(context.Background(), interruptSignals...)
+	defer stop()
+
 	_, err = os.Stat(config.DBSource)
 	if os.IsNotExist(err) {
 		f, _ := os.Create(config.DBSource)
@@ -43,7 +53,7 @@ func main() {
 		log.Fatalf("cannot connect to db: %s", err)
 	}
 
-	dbSource := fmt.Sprintf("sqlite3://%s?query", config.DBSource)
+	dbSource := fmt.Sprintf("%s://%s?query", config.DBDriver, config.DBSource)
 	err = util.DBMigrationUp(config.MigrationSrc, dbSource)
 	if err != nil {
 		log.Fatalf("migration error: %s", err)
@@ -51,44 +61,20 @@ func main() {
 
 	store := db.NewStore(conn)
 
-	runGinServer(config, store)
+	g, ctx := errgroup.WithContext(ctx)
+	runGinServer(ctx, g, config, store)
 
-	interval := 1 * time.Hour // Adjust the interval as needed
-	ticker := time.NewTicker(interval)
-	shutdownChan := make(chan struct{})
-
-	var wg sync.WaitGroup
-
-	isbnService := services.NewISBNService(config.HTTPServerAddress, config.OutputPath)
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		isbnService.Run()
-	}()
-
-	for {
-		select {
-		case <-ticker.C:
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				isbnService.Run()
-			}()
-		case <-shutdownChan:
-			ticker.Stop()
-			close(shutdownChan)
-			wg.Wait()
-			return
-		}
+	err = g.Wait()
+	if err != nil {
+		log.Fatalf("error from wait group: %s", err)
 	}
 }
 
-func runGinServer(config util.Config, store db.Store) {
+func runGinServer(ctx context.Context, g *errgroup.Group, config util.Config, store db.Store) {
 	server, err := internal.NewServer(config, store)
 	if err != nil {
 		log.Fatalf("cannot create server: %s", err)
 	}
 
-	server.Start(config.HTTPServerAddress)
+	server.Start(ctx, g)
 }

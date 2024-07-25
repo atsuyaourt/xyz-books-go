@@ -1,12 +1,14 @@
 package internal
 
 import (
+	"context"
 	"log"
 	"net/http"
 
 	db "github.com/atsuyaourt/xyz-books/internal/db/sqlc"
 	"github.com/atsuyaourt/xyz-books/internal/handlers"
 	"github.com/atsuyaourt/xyz-books/internal/util"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -96,17 +98,27 @@ func (s *Server) setupAPIRouter() {
 	api.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
-func (s *Server) Start(address string) *http.Server {
+func (s *Server) Start(ctx context.Context, g *errgroup.Group) *http.Server {
 	srv := &http.Server{
-		Addr:    address,
+		Addr:    s.config.HTTPServerAddress,
 		Handler: s.router,
 	}
 
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			log.Fatalf("listen: %s\n", err)
+	g.Go(func() error {
+		log.Printf("starting gin server: %s", srv.Addr)
+		err := srv.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatalf("failed to run gin server: %s", err)
+			return err
 		}
-	}()
+		return nil
+	})
+
+	g.Go(func() error {
+		<-ctx.Done()
+		log.Print("shutting down gin server")
+		return srv.Shutdown(context.Background())
+	})
 
 	return srv
 }
