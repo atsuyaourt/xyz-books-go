@@ -1,29 +1,23 @@
-FROM node:20-alpine AS nodeBuild
-
-WORKDIR /app
-COPY vite.config.ts package.json .yarnrc.yml yarn.lock ./
-COPY internal/front/ ./internal/front/
-COPY .yarn/releases/yarn-3.6.4.cjs ./.yarn/releases/
-
-ENV NPM_CONFIG_PREFIX=/app/.npm-global
-# optionally if you want to run npm global bin without specifying path
-ENV PATH=$PATH:/app/.npm-global/bin
+FROM node:iron-alpine3.19 AS node-pnpm
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-RUN corepack prepare yarn@stable --activate
-RUN yarn set version berry 
-RUN yarn 
-RUN yarn build
+WORKDIR /app
 
-FROM golang:1.21-alpine AS builder
+COPY . .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm exec postcss /app/internal/views/style.css -o /app/internal/assets/style.css
+
+FROM golang:1.22-alpine3.19 AS go
 WORKDIR /app
 COPY . .
-RUN apk add build-base && CGO_ENABLED=1 go build -o server ./cmd/api/
+RUN go build -o server ./cmd/server
 
-FROM alpine:3.18
+FROM alpine:3.19
 WORKDIR /app
-COPY --from=builder /app/server .
+COPY --from=go /app/server .
 COPY .env.production ./.env
-COPY --from=nodeBuild  /app/internal/front/dist ./web
-COPY db/migrations ./db/migrations
+COPY --from=node-pnpm  /app/internal/assets ./internal/assets/
+COPY internal/db/migrations ./db/migrations
 
 CMD [ "/app/server" ]
