@@ -6,19 +6,23 @@ createdb:
 dropdb:
 	rm -f ${DB_SOURCE}
 
-migrateup:
-	migrate -path ${MIGRATION_SRC} -database sqlite3://${DB_SOURCE}?query -verbose up
+MIGRATE_CMD = migrate -path ${MIGRATION_SRC} -database "${DB_DRIVER}://${DB_SOURCE}" -verbose
 
-migrateup1:
-	migrate -path ${MIGRATION_SRC} -database sqlite3://${DB_SOURCE}?query -verbose up 1
+migrate-cmd:
+	@read -p "Enter the number of migrations to $(NAME) (leave empty for all): " count; \
+	if [ -z "$$count" ]; then \
+		${MIGRATE_CMD} $(ACTION); \
+	else \
+		${MIGRATE_CMD} $(ACTION) $$count; \
+	fi
+
+migrateup:
+	$(MAKE) migrate-cmd NAME="apply" ACTION=up 
 
 migratedown:
-	migrate -path ${MIGRATION_SRC} -database sqlite3://${DB_SOURCE}?query -verbose down
+	$(MAKE) migrate-cmd NAME="roll back" ACTION=down
 
-migratedown1:
-	migrate -path ${MIGRATION_SRC} -database sqlite3://${DB_SOURCE}?query -verbose down 1
-
-new_migration:
+migratenew:
 	migrate create -ext sql -dir ${MIGRATION_SRC} -seq $(name)
 
 sqlc:
@@ -35,9 +39,10 @@ swag:
 	swag init -o internal/docs/api -d cmd/server,internal/handlers,internal/models
 
 server:
-	pnpm -F frontend build
+	pnpm exec postcss internal/views/style.css -o internal/assets/style.css
+	templ generate
 	go run cmd/server/main.go
 
 
-.PHONY: createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration \
+.PHONY: createdb dropdb migrateup migratedown migrationnew \
         sqlc mock test swag api
